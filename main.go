@@ -1,9 +1,17 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
+	"strings"
 )
+
+const red = "\033[31m"
+const green = "\033[32m"
+const yellow = "\033[33m"
+const blue = "\033[34m"
+const reset = "\033[0m"
 
 func main() {
 
@@ -22,14 +30,27 @@ func inlineMode(args *[]string) {
 
 func promptMode() {
 	line := 1
+	reader := bufio.NewReader(os.Stdin)
 	for {
-		var input string
-		fmt.Printf("[%d] ", line)
-		fmt.Scan(&input)
-		fmt.Printf("%s\n", input)
+		fmt.Printf("%s[%d]%s ", blue, line, reset)
+		input, err := reader.ReadString('\n')
+
+		if err != nil {
+			fmt.Println("An error has ocurred: ", err)
+			break
+		}
+
+		input = strings.TrimSpace(input)
 		line++
+		if len(input) == 0 {
+			fmt.Printf("%sThe input cannot be empty%s\n", yellow, reset)
+			continue
+		}
+
 		if input == "exit" {
 			break
 		}
+
+		fmt.Printf("%s%s%s\n", green, input, reset)
 	}
 }
