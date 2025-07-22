@@ -32,9 +32,7 @@ func inlineMode(args *[]string) {
 func promptMode() {
 	line := 1
 	reader := bufio.NewReader(os.Stdin)
-	lex := NewLexer("")
 	for {
-		lex.CleanLexer()
 		fmt.Printf("%s[%d]%s ", blue, line, reset)
 		input, err := reader.ReadString('\n')
 
@@ -53,9 +51,6 @@ func promptMode() {
 		if input == "exit" {
 			break
 		}
-		lex.SetLine(input)
-		lex.ScanTokens()
-		lex.Show()
-		//fmt.Printf("%s%s%s\n", green, input, reset)
+		fmt.Printf("%s%s%s\n", green, input, reset)
 	}
 }

@@ -1,11 +1,5 @@
 package main
 
-import (
-	"fmt"
-	"strconv"
-	"unicode"
-)
-
 type TokenType int
 
 const (
@@ -43,7 +37,7 @@ func (l *Lexer) SetLine(input string) {
 
 func (l *Lexer) ScanTokens() {
 	source := l.line
-	start := 0
+	//start := 0
 	current := 0
 	for current < len(source) {
 		c := source[current]
@@ -69,76 +63,9 @@ func (l *Lexer) ScanTokens() {
 			l.addToken(newToken(string(c), SLASH))
 			current++
 		default:
-
-			if unicode.IsDigit(rune(c)) {
-				start = current
-				hasDot := false
-				for current < len(source) {
-					ch := rune(source[current])
-					if ch == '.' {
-						if hasDot {
-							break
-						}
-						if current+1 < len(source) && unicode.IsDigit(rune(source[current+1])) {
-							hasDot = true
-							current++
-						} else {
-							break
-						}
-					} else if unicode.IsDigit(ch) {
-						current++
-					} else {
-						break
-					}
-				}
-				lexeme := source[start:current]
-				num, err := strconv.ParseFloat(lexeme, 64)
-				if err != nil {
-					fmt.Printf("Error al convertir número: %s\n", lexeme)
-				} else {
-					l.addToken(Token{
-						Lexeme:  lexeme,
-						Type:    NUMBER,
-						Literal: num,
-					})
-				}
-			}
+			// Write algorithm to number tokens
 		}
 	}
-}
-
-func (l *Lexer) CleanLexer() {
-	l.line = ""
-	l.tokens = []Token{}
-}
-
-func (l *Lexer) Show() {
-	fmt.Printf("source: %s\n", l.line)
-	fmt.Printf("tokens: [\n")
-	for _, t := range l.tokens {
-		fmt.Printf("\t('%s', %s)\n", t.Lexeme, t.Type.String())
-	}
-	fmt.Printf("]\n")
-}
-
-func (t TokenType) String() string {
-	switch t {
-	case PLUS:
-		return "PLUS"
-	case NUMBER:
-		return "NUMBER"
-	case MINUS:
-		return "MINUS"
-	case STAR:
-		return "STAR"
-	case SLASH:
-		return "SLASH"
-	case LEFT_PAREN:
-		return "LEFT_PAREN"
-	case RIGHT_PAREN:
-		return "RIGHT_PAREN"
-	}
-	return "UNKNOWN"
 }
 
 func (l *Lexer) addToken(t Token) {
