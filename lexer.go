@@ -1,5 +1,11 @@
 package main
 
+import (
+	"fmt"
+	"strconv"
+	"unicode"
+)
+
 type TokenType int
 
 const (
@@ -23,49 +29,96 @@ func newToken(lex string, typeToken TokenType) Token {
 }
 
 type Lexer struct {
-	line   string //raw input
-	tokens []Token
+	line    string //raw input
+	tokens  []Token
+	current int
 }
 
 func NewLexer(input string) Lexer {
-	return Lexer{line: input, tokens: make([]Token, 0)}
+	return Lexer{line: input, tokens: make([]Token, 0), current: 0}
 }
 
 func (l *Lexer) SetLine(input string) {
 	l.line = input
 }
 
-func (l *Lexer) ScanTokens() {
+func (l *Lexer) ScanTokens() error {
 	source := l.line
-	//start := 0
-	current := 0
-	for current < len(source) {
-		c := source[current]
+	for l.current < len(source) {
+		c := source[l.current]
 		switch c {
 		case ' ', '\n', '\r':
-			current++
+			l.current++
 		case '(':
 			l.addToken(newToken(string(c), LEFT_PAREN))
-			current++
+			l.current++
 		case ')':
 			l.addToken(newToken(string(c), RIGHT_PAREN))
-			current++
+			l.current++
 		case '+':
 			l.addToken(newToken(string(c), PLUS))
-			current++
+			l.current++
 		case '-':
 			l.addToken(newToken(string(c), MINUS))
-			current++
+			l.current++
 		case '*':
 			l.addToken(newToken(string(c), STAR))
-			current++
+			l.current++
 		case '/':
 			l.addToken(newToken(string(c), SLASH))
-			current++
+			l.current++
 		default:
 			// Write algorithm to number tokens
+			if unicode.IsDigit(rune(c)) {
+				if err := l.tokenizeNumber(); err != nil {
+					return err
+				}
+			} else {
+				return fmt.Errorf("invalid character: %q", c)
+			}
 		}
 	}
+	return nil
+}
+
+func underLimit(a, b int) bool {
+	return a < b
+}
+
+func (l *Lexer) tokenizeNumber() error {
+	start := l.current
+	source := l.line
+
+	for underLimit(l.current, len(source)) && unicode.IsDigit(rune(source[l.current])) {
+		l.current++
+	}
+	if underLimit(l.current, len(source)) && source[l.current] == '.' {
+		if underLimit(l.current+1, len(source)) && unicode.IsDigit(rune(source[l.current+1])) {
+			l.current++
+			for underLimit(l.current, len(source)) && unicode.IsDigit(rune(source[l.current])) {
+				l.current++
+			}
+			if underLimit(l.current, len(source)) && source[l.current] == '.' {
+				return fmt.Errorf("Invalid input: %c", source[l.current])
+			}
+
+		} else {
+			return fmt.Errorf("Invalid input: %c", source[l.current])
+		}
+	}
+
+	lexeme := source[start:l.current]
+	number, err := strconv.ParseFloat(lexeme, 64)
+	if err != nil {
+		return fmt.Errorf("Connot parse: %f", number)
+	}
+	token := Token{
+		Lexeme:  lexeme,
+		Type:    NUMBER,
+		Literal: number,
+	}
+	l.addToken(token)
+	return nil
 }
 
 func (l *Lexer) addToken(t Token) {

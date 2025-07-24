@@ -8,7 +8,11 @@ import (
 func TestSimpleLexer(t *testing.T) {
 	input := "1 + 2"
 	lexer := NewLexer(input)
-	lexer.ScanTokens()
+	err := lexer.ScanTokens()
+
+	if err != nil {
+		t.Fatalf("Unexpected error %v", err)
+	}
 
 	expected := []Token{
 		{Lexeme: "1", Type: NUMBER, Literal: 1.0},
@@ -33,8 +37,11 @@ func TestSimpleLexer(t *testing.T) {
 func TestDecimalNumberLexer(t *testing.T) {
 	input := "(1.2) * (5.5) + (2 - 5) / 10"
 	lexer := NewLexer(input)
-	lexer.ScanTokens()
+	err := lexer.ScanTokens()
 
+	if err != nil {
+		t.Fatalf("Unexpected error %v", err)
+	}
 	expected := []Token{
 		{Lexeme: "(", Type: LEFT_PAREN, Literal: nil},
 		{Lexeme: "1.2", Type: NUMBER, Literal: 1.2},
@@ -67,20 +74,42 @@ func TestDecimalNumberLexer(t *testing.T) {
 
 }
 
-func TestDotAtStart_Invalid(t *testing.T) {
-	input := ".1"
+func TestDotAtEndNotInvalid(t *testing.T) {
+	input := "1."
 	lexer := NewLexer(input)
-	lexer.ScanTokens()
+	err := lexer.ScanTokens()
+
+	if err == nil {
+		t.Errorf("%s must be invalid", input)
+	}
 
 	if len(lexer.tokens) != 0 {
 		t.Fatalf("Expected no tokens for invalid input, got %d", len(lexer.tokens))
 	}
 }
 
-func TestDotAtEnd_Invalid(t *testing.T) {
-	input := "1."
+func TestDotAtStart_Invalid(t *testing.T) {
+	input := ".1"
 	lexer := NewLexer(input)
-	lexer.ScanTokens()
+	err := lexer.ScanTokens()
+
+	if err == nil {
+		t.Fatalf("%s must be invalid", input)
+	}
+
+	if len(lexer.tokens) != 0 {
+		t.Fatalf("Expected no tokens for invalid input, got %d", len(lexer.tokens))
+	}
+}
+
+func TestDoubleDot(t *testing.T) {
+	input := "1.1.1"
+	lexer := NewLexer(input)
+	err := lexer.ScanTokens()
+
+	if err == nil {
+		t.Fatalf("%s must be invalid", input)
+	}
 
 	if len(lexer.tokens) != 0 {
 		t.Fatalf("Expected no tokens for invalid input, got %d", len(lexer.tokens))
