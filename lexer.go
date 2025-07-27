@@ -48,25 +48,25 @@ func (l *Lexer) ScanTokens() error {
 		c := source[l.current]
 		switch c {
 		case ' ', '\n', '\r':
-			l.current++
+			l.advance()
 		case '(':
 			l.addToken(newToken(string(c), LEFT_PAREN))
-			l.current++
+			l.advance()
 		case ')':
 			l.addToken(newToken(string(c), RIGHT_PAREN))
-			l.current++
+			l.advance()
 		case '+':
 			l.addToken(newToken(string(c), PLUS))
-			l.current++
+			l.advance()
 		case '-':
 			l.addToken(newToken(string(c), MINUS))
-			l.current++
+			l.advance()
 		case '*':
 			l.addToken(newToken(string(c), STAR))
-			l.current++
+			l.advance()
 		case '/':
 			l.addToken(newToken(string(c), SLASH))
-			l.current++
+			l.advance()
 		default:
 			// Write algorithm to number tokens
 			if unicode.IsDigit(rune(c)) {
@@ -81,43 +81,63 @@ func (l *Lexer) ScanTokens() error {
 	return nil
 }
 
-func underLimit(a, b int) bool {
-	return a < b
+func (l *Lexer) peek() rune {
+	if l.current < len(l.line) {
+		return rune(l.line[l.current])
+	}
+	return 0
+}
+
+func (l *Lexer) peekNext() rune {
+	if l.current+1 < len(l.line) {
+		return rune(l.line[l.current+1])
+	}
+	return 0
+}
+
+func (l *Lexer) hasNext() bool {
+	return l.current < len(l.line)
+}
+
+func (l *Lexer) advance() {
+	l.current++
+}
+
+func (l *Lexer) isValidDecimalStart() bool {
+	return l.peek() == '.' && unicode.IsDigit(l.peekNext())
+}
+
+func (l *Lexer) consumeDigits() {
+	for l.hasNext() && unicode.IsDigit(l.peek()) {
+		l.advance()
+	}
 }
 
 func (l *Lexer) tokenizeNumber() error {
 	start := l.current
-	source := l.line
 
-	for underLimit(l.current, len(source)) && unicode.IsDigit(rune(source[l.current])) {
-		l.current++
-	}
-	if underLimit(l.current, len(source)) && source[l.current] == '.' {
-		if underLimit(l.current+1, len(source)) && unicode.IsDigit(rune(source[l.current+1])) {
-			l.current++
-			for underLimit(l.current, len(source)) && unicode.IsDigit(rune(source[l.current])) {
-				l.current++
-			}
-			if underLimit(l.current, len(source)) && source[l.current] == '.' {
-				return fmt.Errorf("Invalid input: %c", source[l.current])
-			}
+	l.consumeDigits()
 
-		} else {
-			return fmt.Errorf("Invalid input: %c", source[l.current])
+	if l.isValidDecimalStart() {
+		l.advance()
+		l.consumeDigits()
+		if l.peek() == '.' {
+			return fmt.Errorf("Invalid input: multiple dots")
 		}
+	} else if l.peek() == '.' {
+		return fmt.Errorf("Invalid input: dot not followed by digit")
 	}
 
-	lexeme := source[start:l.current]
+	lexeme := l.line[start:l.current]
 	number, err := strconv.ParseFloat(lexeme, 64)
 	if err != nil {
-		return fmt.Errorf("Connot parse: %f", number)
+		return fmt.Errorf("Can not parse: %f", number)
 	}
-	token := Token{
+	l.addToken(Token{
 		Lexeme:  lexeme,
 		Type:    NUMBER,
 		Literal: number,
-	}
-	l.addToken(token)
+	})
 	return nil
 }
 
